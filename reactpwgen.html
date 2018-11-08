@@ -1,0 +1,220 @@
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet"/>
+<link href="https://bootswatch.com/4/lux/bootstrap.min.css" rel="stylesheet"/>
+
+<script src="https://unpkg.com/jquery@3.3.1/dist/jquery.slim.min.js"></script>
+<script src="https://unpkg.com/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/react/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+
+.container {
+  display: flex;
+  flex-direction: column;
+}
+
+section {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#controls div {
+  float: left;
+  cursor: pointer;
+  padding: 10px;
+  margin: 20px;
+  width: 60px;
+  border-radius: 5px;
+  color: #343d41;
+}
+
+#controls .text {
+  font-size: 18px;
+}
+
+#controls .active {
+  background-color: rgb(177, 177, 177);
+}
+
+#results {
+  flex-wrap: wrap;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 12;
+  font-weight: bold;
+}
+
+#results div {
+  cursor: pointer;
+  padding: 4px;
+  margin: 4px;
+}
+</style>
+
+<div id="root"></div> 
+<script type="text/babel">
+
+// Output layout - number of chars per line
+const pwcpl = 72;
+
+// Total amount of passwords to produce
+const pwtot = 100;
+
+// Character sets to use
+const charsets = {
+  setaz: 'abcdefghijklmnopqrstuvwxyz',
+  setAZ: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  set09: '0123456789',
+  setsm: '=+-*@$%!&?,.:;^#(){}[]|',
+};
+
+class Main extends React.Component {
+
+  constructor() {
+    super();
+
+    this.state = {
+      pwlen: 8,
+      sets: {
+        setaz: true,
+        setAZ: true,
+        set09: true,
+        setsm: false,
+      }
+    };
+
+    this.genword = this.genword.bind(this);
+    this.generate = this.generate.bind(this);
+    this.toggleSet = this.toggleSet.bind(this);
+    this.copyWord = this.copyWord.bind(this);
+    this.regen = this.regen.bind(this);
+  }
+
+  // Generate a single password using secure random values
+  genword(len, charset) {
+
+    // Number of chars in set to limit random number
+    let range = charset.length;
+
+    // Output word
+    let word = '';
+
+    if (range === 0) {
+      word = 'null';
+    } else {
+
+      let prev = -1;
+      let next = 0;
+
+      // Random numbers
+      const array = new Uint32Array(1024);
+      window.crypto.getRandomValues(array);
+
+      // Add random chars form set for desired length
+      for (let n = 0; n < len; ++n) {
+        let key;
+            
+        // Prevent consecutive chars from being the same
+        do {
+          key = array[next] % range;
+          next = (next + 1) % 1024;
+        } while (key === prev);
+
+        prev = key;
+        word += charset[key];
+      }
+    }
+
+    return word;
+  }
+
+  copyWord(word) {
+    const fn = () => {
+      navigator.clipboard.writeText(word)
+    }
+    fn.bind(this);
+    return fn;
+  }
+
+  regen() {
+    const fn = () => {
+      this.setState({flag: Date.now()});
+    }
+    fn.bind(this);
+    return fn;
+  }
+
+  toggleSet(key) {
+    const fn = () => {
+      const sets = {...this.state.sets};
+      sets[key] = !sets[key];
+      this.setState({sets});
+    }
+    fn.bind(this);
+    return fn;
+  }
+
+  toggleLen(key) {
+    const fn = () => {
+      let {pwlen} = this.state;
+      pwlen %= 32;
+      pwlen += 8;
+      this.setState({pwlen});
+    }
+    fn.bind(this);
+    return fn;
+  }
+
+  generate() {
+        
+    // Initialize char set
+    let charset = '';
+
+    const {sets, pwlen} = this.state;
+    const setIds = Object.keys(this.state.sets);
+    const result = [];
+
+    setIds.forEach(id => {
+      if (sets[id]) {
+        charset += charsets[id];
+      }
+    });
+
+    for (let c = 0; c < pwtot; ++c) {
+      const word = this.genword(pwlen, charset);
+      result.push(<div key={c} onClick={this.copyWord(word)}>{word}</div>);
+    }
+
+    return result;
+  }
+
+
+  render() {
+
+    const results = this.generate();
+
+    return (
+      <div className='container'>
+        <h1>Secure Passwords Generator</h1>
+            
+        <section id='controls' key='controls'>
+            <div className="active material-icons" onClick={this.regen()}>autorenew</div>
+            <div className="active text" onClick={this.toggleSet('setaz')}>a:z</div>
+            <div className="active text" onClick={this.toggleSet('setAZ')}>A:Z</div>
+            <div className="active text" onClick={this.toggleSet('set09')}>0:9</div>
+            <div className="active text" onClick={this.toggleSet('setsm')}>!@#</div>
+            <div className="active text" onClick={this.toggleLen()}>{this.state.pwlen}</div>
+        </section>
+        <section id='results' key='results'>{results}</section>
+      </div>
+    );
+  }
+}
+
+ReactDOM.render(<Main/>, document.getElementById('root'));
+
+</script> 
