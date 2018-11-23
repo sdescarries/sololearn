@@ -1,4 +1,5 @@
 /node_modules/**/*.js
 /lib/*.js
 /es/*.js
+/bin/*
 /demo/bundle.js

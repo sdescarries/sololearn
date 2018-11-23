@@ -16,6 +16,7 @@
     "expect": true,
     "sinon": true
   },
+  "parser": "babel-eslint",
   "plugins": [],
   "rules": {
     "indent": [
