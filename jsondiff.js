@@ -35,8 +35,6 @@ function logentry(depth, modifier, value, key) {
 
 function jsonDiff(a, b, depth = 0) {
 
-  let result = true;
-
   const ksa = Object.keys(a);
   const ksb = Object.keys(b);
 
