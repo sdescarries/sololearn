@@ -59,8 +59,8 @@ function doLayout() {
 
   body.style.flexDirection = dir;
 
-  work.w = canvas.width = dim;
-  work.h = canvas.height = dim;
+  work.w = canvas.width = ww;
+  work.h = canvas.height = wh;
 
   work.ctx = canvas.getContext('2d');
 }
