@@ -1,8 +1,5 @@
 const blur = {};
 
-var W, H, ctx;
-var arr, max = 100;
-
 function rand() {
   return Math.floor((Math.random() * 256));
 }
