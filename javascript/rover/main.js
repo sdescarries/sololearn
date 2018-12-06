@@ -73,7 +73,7 @@ function doLayout() {
     dim = ww;
   }
 
-  console.log({ ww, wh, dir, dim });
+  //console.log({ ww, wh, dir, dim });
 
   const canvas = work.canvas = document.querySelector('canvas');
   const body = document.querySelector('body');
@@ -128,7 +128,7 @@ function animate() {
   hz = rz / 2;
   ctx.drawImage(rover, -hz, -hz, rz, rz);
 
-  console.log({ ms, mz, md });
+  //console.log({ ms, mz, md });
 
   work.x += ms * Math.cos((-d+90)*Math.PI/180);
   work.y += ms * Math.sin((-d+90)*Math.PI/180);
