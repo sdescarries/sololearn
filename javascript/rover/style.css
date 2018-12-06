@@ -1,0 +1,34 @@
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: stretch;
+  align-content: stretch;
+  overflow: hidden;
+}
+
+.body > * {
+  flex: 1 auto;
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+
+.v {
+  display: flex;
+  flex-direction: column;
+}
+
+.h {
+  display: flex;
+  flex-direction: row;
+}
+
+button {
+  font-size: 40;
+  width: 100px;
+  height: 100px;
+  margin: auto;
+}
