@@ -1,34 +1,47 @@
+html,
 body {
+  height: 100%;
   margin: 0;
+}
+
+.container {
+	display: flex;
+  flex-direction: row;
+	height: 100%;
+  min-height: 100%;
+  width: 100%;
+  min-width: 100%;
+}
+
+#control {
   display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
+  width: 350px;
+  border: 1px;
   justify-content: space-between;
   align-items: stretch;
   align-content: stretch;
-  overflow: hidden;
+
 }
 
-.body > * {
-  flex: 1 auto;
-  flex-grow: 1;
-  flex-shrink: 1;
+#view {
+  flex: 1;
 }
-
 
 .v {
   display: flex;
+  flex: 1;
   flex-direction: column;
 }
 
 .h {
   display: flex;
+  flex: 1;
   flex-direction: row;
 }
 
 button {
-  font-size: 40;
-  width: 100px;
-  height: 100px;
+  flex: 1;
   margin: auto;
+	height: 100%;
+  min-height: 100%;
 }

@@ -1,24 +1,35 @@
 <!DOCTYPE html>
 <html>
-<link rel='stylesheet' href='style.css'>
-<script type='text/javascript' src='main.js'></script>
-<body onload=init() class=h>
-  <div id='control'>
-    <div class=v>
-      <div class=h>
-        <button id=lf>↶</button>
-        <button id=fw>⇧</button>
-        <button id=rt>↷</button>
-      </div>
-      <div class=h>
-        <button id=dn>○</button>
-        <button id=bk>⇩</button>
-        <button id=up>◌</button>
-      </div>
+
+<head>
+  <link rel='stylesheet' href='style.css'>
+  <script type='text/javascript' src='main.js'></script>
+</head>
+
+<body onload=init()>
+  <div class='container'>
+    <canvas id='view'></canvas>
+    <div id='control'>
+      <div class=v>
+        <div class=h>
+          <button id=lf>↶</button>
+          <button id=fw>⇧</button>
+          <button id=rt>↷</button>
+        </div>
+        <div class=h>
+          <button id=dn>○</button>
+          <button id=bk>⇩</button>
+          <button id=up>◌</button>
+        </div>
+        <div class=h>
+          log
+        </div>
+        <div class=h>
+          cli
+        </div>
+        </div>
     </div>
   </div>
-  <div id='view'>
-    <canvas></canvas>
-  </div>
 </body>
-</html>
+
+ </html>
