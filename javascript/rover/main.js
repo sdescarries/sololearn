@@ -21,6 +21,12 @@ const work = {
   idx: -1,
 };
 
+// prettify number
+function pn(num) {
+  const str = (num * 1000).toString(10);
+  return str.split('.')[0];
+}
+
 function pickup() {
   const {
     rocks,
@@ -29,24 +35,47 @@ function pickup() {
   } = work;
 
   if (idx >= 0 && store.length < 5) {
+
     const rock = rocks[idx];
+    const ui = document.querySelector('#storage');
+
+    if (ui) {
+      const img = rock.img.cloneNode(true);
+      img.className = 'button';
+      img.rock = rock;
+      img.onclick = function () {
+        ui.removeChild(this);
+        drop(this.rock);
+      };
+      ui.appendChild(img);
+    }
+
     store.push(rock);
     rocks.splice(idx, 1);
+    const { x, y, s } = rock;
+    logMessage(`Picked a rock of size ${pn(s)} at ${pn(x)}:${pn(y)}<br>`);
   }
 }
 
-function drop() {
+function drop(target) {
   const {
     store,
     rocks,
     x, y,
   } = work;
 
-  if (store.length > 0) {
-    const rock = store.pop();
+  const idx = store.indexOf(target);
+
+  if (idx > -1) {
+    const rock = store[idx];
+    store.splice(idx, 1);
     rock.x = -x;
     rock.y = -y;
+    const { s } = rock;
+    logMessage(`Dropped a rock of size ${pn(s)} at ${pn(-x)}:${pn(-y)}<br>`);
     rocks.push(rock);
+  } else {
+    logMessage('Nothing to drop');
   }
 }
 
@@ -58,13 +87,41 @@ const commands = {
   bk: () => { work.ms = -1; },
   up: () => { work.mz = 1.1; },
   dn: () => { work.mz = 0.9; },
-  pk: pickup,
-  dp: drop,
+  pk: () => { pickup(); },
+  dp: () => { drop(); },
 };
+
+function logMessage(content) {
+  const {
+    log
+  } = work;
+
+  log.insertAdjacentHTML('beforeend', content);
+  log.scrollTop = log.scrollHeight;
+}
+
+function camera() {
+  const {
+    canvas,
+    downloadLink,
+  } = work;
+
+  try {
+
+    const now = new Date();
+    const iso = now.toISOString();
+    downloadLink.download = `rover-${iso}.jpg`;
+
+    const data = canvas.toDataURL('image/jpeg');
+    this.href = data;
+  } catch ({ stack }) {
+    logMessage(`<h3>Failed taking picture</h3><pre>${stack}</pre>`);
+  }
+}
 
 async function init() {
 
-  document.oncontextmenu = () => false;
+  //document.oncontextmenu = () => false;
 
   // Seed display values only once
   work.time = Date.now();
@@ -127,6 +184,11 @@ async function init() {
 
   for (let ctl of ['lf', 'rt', 'fw', 'bk', 'up', 'dn']) {
     const el = document.querySelector(`#${ctl}`);
+
+    if (!el) {
+      continue;
+    }
+
     el.onpointerdown = () => {
       commands[ctl]();
     };
@@ -140,12 +202,20 @@ async function init() {
 
   for (let ctl of ['pk', 'dp']) {
     const el = document.querySelector(`#${ctl}`);
+
+    if (!el) {
+      continue;
+    }
+
     el.onclick = () => {
       commands[ctl]();
     };
   }
 
+  work.log = document.querySelector('#log');
   work.canvas = document.querySelector('canvas');
+  work.downloadLink = document.querySelector('#downloadLink');
+  work.downloadLink.addEventListener('click', camera, false);
 
   doLayout();
   animate();
@@ -163,7 +233,7 @@ function doLayout() {
   } = work;
 
   canvas.width = innerWidth;
-  canvas.height = innerHeight - 350;
+  canvas.height = innerHeight;
 }
 
 function animate() {
@@ -220,7 +290,7 @@ function animate() {
       iw = height * ir;
     } else {
       iw = width;
-      ih = width * ir;
+      ih = width / ir;
     }
     ctx.drawImage(space, 0, 0, iw, ih);
   }
@@ -264,34 +334,34 @@ function animate() {
     }
   }
 
+  // Rover is 1/40 the scale of the map
   ctx.save();
   ctx.rotate((d-90)*Math.PI/180);
-
-  // Rover is 1/40 the scale of the map
   let rz = z / 40;
   hz = rz / 2;
   ctx.drawImage(rover, -hz, -hz, rz, rz);
-
   ctx.restore();
 
+
+  // Manage the closest rock
   if (closest >= 0) {
     const rock = rocks[closest];
-    hz = Math.max(3, z / (rock.s * 100 + 150));
+    hz = Math.max(6, z / (rock.s * 100 + 150));
     zx = (rock.x + x) * z;
     zy = (rock.y + y) * z;
     ctx.beginPath();
     ctx.arc(zx, zy, hz, 0, Math.PI * 2, true);
 
-    ctx.lineWidth=2;
+    ctx.lineWidth=4;
 
     if (store.length >= 5) {
-      ctx.strokeStyle = '#822';
+      ctx.strokeStyle = '#F22';
     } else {
       if (work.dist < 0.001) {
         work.idx = closest;
         ctx.strokeStyle = '#0F0';
       } else {
-        ctx.strokeStyle = '#228';
+        ctx.strokeStyle = '#22F';
       }
 
     }
@@ -315,8 +385,6 @@ function animate() {
   if (Math.sqrt(x*x + y*y) < 0.45) {
     work.x = x;
     work.y = y;
-  } else {
-    console.log('too close to edge of the world');
   }
 
   if (z > 100) {

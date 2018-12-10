@@ -16,18 +16,55 @@ body {
   min-width: 100%;
 }
 
+#storage {
+  background-color: #000000D0;
+  color: #FFF;
+  border: 1px solid #FFF;
+  backdrop-filter: blur(10px);
+  border-top-right-radius: 45px;
+  border-bottom-right-radius: 45px;
+  position: absolute;
+  left: 0;
+}
+
+#view {
+  flex: 1;
+}
+
+#pannel {
+  display: flex;
+  width: 100%;
+  background-color: #000000D0;
+  color: #FFF;
+  border: 1px solid #FFF;
+  backdrop-filter: blur(10px);
+  border-top-left-radius: 45px;
+  border-top-right-radius: 45px;
+  position: absolute;
+  bottom: 0;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
 #control {
   display: flex;
-  height: 350px;
-  width: 100%;
-  border: 1px;
+  flex: 0;
   justify-content: space-between;
   align-items: stretch;
   align-content: stretch;
 }
 
-#view {
+#log {
+  padding: 10px;
+  height: 228px;
+  display: flex;
   flex: 1;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  margin-right: 45px;
 }
 
 .v {
@@ -43,7 +80,7 @@ body {
 }
 
 .button {
-  margin: auto;
+  margin: 10px;
   padding: 20px;
   width: 50px;
   height: 50px;
