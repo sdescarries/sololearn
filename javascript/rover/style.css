@@ -42,9 +42,22 @@ body {
   flex-direction: row;
 }
 
-button {
-  flex: 1;
+.button {
   margin: auto;
-	height: 100%;
-  min-height: 100%;
+  padding: 20px;
+  width: 50px;
+  height: 50px;
+  border-radius: 45px;
+  border: 2px solid #232;
+
+	box-shadow:inset 0px 1px 0px 0px #fce2c1;
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #ffc477), color-stop(1, #fb9e25) );
+	background:-moz-linear-gradient( center top, #ffc477 5%, #fb9e25 100% );
+	background-color:#ffc477;
+}
+
+.button:hover, .button:active {
+	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #fb9e25), color-stop(1, #ffc477) );
+	background:-moz-linear-gradient( center top, #fb9e25 5%, #ffc477 100% );
+	background-color:#fb9e25;
 }
