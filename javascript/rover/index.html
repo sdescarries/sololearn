@@ -6,33 +6,56 @@
   <script type='text/javascript' src='main.js'></script>
 </head>
 
+<!--
+
+  NOTE: Some images contained in this application were taken from the web:
+
+  * img/space.jpg
+        http://wallpoper.com/wallpaper/outer-space-426204
+
+  * img/marstotal.jpg
+        https://newauthors.wordpress.com/2010/06/08/mars-deep-crust-mine-zb203-south/
+
+  * img/r1.png
+        http://www.pngall.com/rock-png/download/10800
+
+  * img/r2.png
+        http://www.pngall.com/rock-png/download/10564
+
+  * img/r3.png
+        http://icons.iconarchive.com/icons/archigraphs/eco-health/512/White-Stone-icon.png
+
+  * img/r4.png
+        http://icons.iconarchive.com/icons/archigraphs/eco-health/512/Eroded-Stone-icon.png
+
+ -->
+
 <body onload=init()>
   <div class=container>
     <canvas id=view></canvas>
     <div id=pannel class=h>
       <div id=control class=v>
         <div class=h>
-          <img src='http://icons.iconarchive.com/icons/iconsmind/outline/128/Turn-Left-icon.png' class=button id=lf>
-          <img src='http://icons.iconarchive.com/icons/icons8/ios7/128/Arrows-Up-icon.png' class=button id=fw>
-          <img src='http://icons.iconarchive.com/icons/iconsmind/outline/128/Turn-Right-icon.png' class=button id=rt>
+          <img class=button id=lf>
+          <img class=button id=fw>
+          <img class=button id=rt>
         </div>
         <div class=h>
-          <img src='http://icons.iconarchive.com/icons/icons8/ios7/128/Very-Basic-Zoom-Out-icon.png' class=button id=dn>
-          <img src='http://icons.iconarchive.com/icons/icons8/ios7/128/Arrows-Down-icon.png' class=button id=bk>
-          <img src='http://icons.iconarchive.com/icons/icons8/ios7/128/Very-Basic-Zoom-In-icon.png' class=button id=up>
+          <img class=button id=dn>
+          <img class=button id=bk>
+          <img class=button id=up>
         </div>
       </div>
-          <div id=log class=v>
-            <h1>Mars Rover by Simon</h1>
-          </div>
-        </div>
-        <div id=storage class=v>
-          <a id=downloadLink download=rover.jpg>
-            <img src='http://icons.iconarchive.com/icons/iconsmind/outline/128/Camera-2-icon.png' class=button id=cm>
-          </a>
-          <img src='http://icons.iconarchive.com/icons/icons8/ios7/128/Ecommerce-Put-In-icon.png' class=button id=pk>
-          <!-- <img src='http://icons.iconarchive.com/icons/icons8/ios7/128/Ecommerce-Put-Out-icon.png' class=button id=dp> -->
-        </div>
+      <div id=log class=v>
+        <h1>Mars Rover by Simon</h1>
+      </div>
+    </div>
+    <div id=storage class=v>
+      <a id=downloadLink download=rover.jpg>
+        <img class=button id=cm>
+      </a>
+      <img class=button id=pk>
+    </div>
 </div>
 </body>
 

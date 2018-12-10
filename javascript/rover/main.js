@@ -133,8 +133,6 @@ async function init() {
 
   {
     // Space background
-    // Source: https://ak4.picdn.net/shutterstock/videos/3014164/thumb/1.jpg
-
     const image = work.space = new Image();
     image.origin = 'anonymous';
     image.src = `${imgRoot}/space.jpg`;
@@ -142,8 +140,6 @@ async function init() {
 
   {
     // An actual satelite image of Mars
-    // Source: https://newauthors.files.wordpress.com/2010/06/marstotal.jpg
-
     const image = work.marsbg = new Image();
     image.origin = 'anonymous';
     image.src = `${imgRoot}/marstotal.jpg`;
@@ -151,8 +147,6 @@ async function init() {
 
   {
     // The rover representation
-    // Source: http://icons.iconarchive.com/icons/graphicloads/polygon/256/upload-3-icon.png
-
     const image = work.rover = new Image();
     image.origin = 'anonymous';
     image.src = `${imgRoot}/rover.png`;
@@ -160,15 +154,7 @@ async function init() {
 
   const rockImgs = [];
 
-  /**
-   * Rock images from IconArchive
-   *
-   *   http://icons.iconarchive.com/icons/anton-gerasimenko/harry-potter/128/Philosophers-Stone-icon.png
-   *   http://icons.iconarchive.com/icons/raindropmemory/down-to-earth/512/G12-Rock-icon.png
-   *   http://icons.iconarchive.com/icons/archigraphs/eco-health/512/White-Stone-icon.png
-   *   http://icons.iconarchive.com/icons/archigraphs/eco-health/512/Eroded-Stone-icon.png
-   *
-   */
+  // Rock images
   for (let src of [
     `${imgRoot}/r1.png`,
     `${imgRoot}/r2.png`,
@@ -202,6 +188,20 @@ async function init() {
     work.rocks.push(rock);
   }
 
+  // Controls
+  const ctlImgs = {
+    lf: `${imgRoot}/left.png`,
+    rt: `${imgRoot}/right.png`,
+    fw: `${imgRoot}/up.png`,
+    bk: `${imgRoot}/down.png`,
+    up: `${imgRoot}/zoomin.png`,
+    dn: `${imgRoot}/zoomout.png`,
+    pk: `${imgRoot}/grab.png`,
+    dp: `${imgRoot}/drop.png`,
+    cm: `${imgRoot}/camera.png`,
+    lb: `${imgRoot}/lab.png`,
+  };
+
   for (let ctl of ['lf', 'rt', 'fw', 'bk', 'up', 'dn']) {
     const el = document.querySelector(`#${ctl}`);
 
@@ -209,6 +209,7 @@ async function init() {
       continue;
     }
 
+    el.src = ctlImgs[ctl];
     el.onpointerdown = () => {
       commands[ctl]();
     };
@@ -220,16 +221,22 @@ async function init() {
     };
   }
 
-  for (let ctl of ['pk', 'dp']) {
+  for (let ctl of ['pk', 'dp', 'cm']) {
     const el = document.querySelector(`#${ctl}`);
 
     if (!el) {
       continue;
     }
 
-    el.onclick = () => {
-      commands[ctl]();
-    };
+    el.src = ctlImgs[ctl];
+
+    const com = commands[ctl];
+
+    if (com) {
+      el.onclick = () => {
+        commands[ctl]();
+      };
+    }
   }
 
   work.log = document.querySelector('#log');
