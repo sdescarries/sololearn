@@ -1,3 +1,5 @@
+const imgRoot = 'img';
+
 const work = {
   // Rover position in % of whole map, 0:0 is origin
   x: 0.0,
@@ -131,32 +133,50 @@ async function init() {
 
   {
     // Space background
+    // Source: https://ak4.picdn.net/shutterstock/videos/3014164/thumb/1.jpg
+
     const image = work.space = new Image();
-    image.src = 'https://ak4.picdn.net/shutterstock/videos/3014164/thumb/1.jpg';
+    image.origin = 'anonymous';
+    image.src = `${imgRoot}/space.jpg`;
   }
 
   {
     // An actual satelite image of Mars
+    // Source: https://newauthors.files.wordpress.com/2010/06/marstotal.jpg
+
     const image = work.marsbg = new Image();
-    image.src = 'https://newauthors.files.wordpress.com/2010/06/marstotal.jpg';
+    image.origin = 'anonymous';
+    image.src = `${imgRoot}/marstotal.jpg`;
   }
 
   {
     // The rover representation
+    // Source: http://icons.iconarchive.com/icons/graphicloads/polygon/256/upload-3-icon.png
+
     const image = work.rover = new Image();
-    image.src = 'http://icons.iconarchive.com/icons/graphicloads/polygon/256/upload-3-icon.png';
+    image.origin = 'anonymous';
+    image.src = `${imgRoot}/rover.png`;
   }
 
   const rockImgs = [];
 
+  /**
+   * Rock images from IconArchive
+   *
+   *   http://icons.iconarchive.com/icons/anton-gerasimenko/harry-potter/128/Philosophers-Stone-icon.png
+   *   http://icons.iconarchive.com/icons/raindropmemory/down-to-earth/512/G12-Rock-icon.png
+   *   http://icons.iconarchive.com/icons/archigraphs/eco-health/512/White-Stone-icon.png
+   *   http://icons.iconarchive.com/icons/archigraphs/eco-health/512/Eroded-Stone-icon.png
+   *
+   */
   for (let src of [
-    'http://icons.iconarchive.com/icons/anton-gerasimenko/harry-potter/128/Philosophers-Stone-icon.png',
-    'http://icons.iconarchive.com/icons/raindropmemory/down-to-earth/512/G12-Rock-icon.png',
-    'http://icons.iconarchive.com/icons/archigraphs/eco-health/512/White-Stone-icon.png',
-    'http://icons.iconarchive.com/icons/archigraphs/eco-health/512/Eroded-Stone-icon.png',
+    `${imgRoot}/r1.png`,
+    `${imgRoot}/r2.png`,
+    `${imgRoot}/r3.png`,
+    `${imgRoot}/r4.png`,
   ]) {
-    // Some rock
     const image = new Image();
+    image.origin = 'anonymous';
     image.src = src;
     rockImgs.push(image);
   }
