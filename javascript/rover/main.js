@@ -9,7 +9,7 @@ const work = {
   z: 600,
 
   // Rover direction in degree
-  d: 90.0,
+  d: 0.0,
 
   // Moving speeds
   ms: 0.0,
@@ -363,7 +363,7 @@ function animate() {
 
   // Rover is 1/40 the scale of the map
   ctx.save();
-  ctx.rotate((d-90)*Math.PI/180);
+  ctx.rotate((d)*Math.PI/180);
   let rz = z / 40;
   hz = rz / 2;
   ctx.drawImage(rover, -hz, -hz, rz, rz);
