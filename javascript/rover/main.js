@@ -7,7 +7,7 @@ const work = {
   z: 600,
 
   // Rover direction in degree
-  d: 0.0,
+  d: 90.0,
 
   // Moving speeds
   ms: 0.0,
@@ -15,8 +15,40 @@ const work = {
   md: 0.0,
 
   // Database of rocks found on surface
-  rocks: []
+  rocks: [],
+  store: [],
+  dist: 1,
+  idx: -1,
 };
+
+function pickup() {
+  const {
+    rocks,
+    store,
+    idx,
+  } = work;
+
+  if (idx >= 0 && store.length < 5) {
+    const rock = rocks[idx];
+    store.push(rock);
+    rocks.splice(idx, 1);
+  }
+}
+
+function drop() {
+  const {
+    store,
+    rocks,
+    x, y,
+  } = work;
+
+  if (store.length > 0) {
+    const rock = store.pop();
+    rock.x = -x;
+    rock.y = -y;
+    rocks.push(rock);
+  }
+}
 
 // Rover commands for buttons
 const commands = {
@@ -26,9 +58,13 @@ const commands = {
   bk: () => { work.ms = -1; },
   up: () => { work.mz = 1.1; },
   dn: () => { work.mz = 0.9; },
+  pk: pickup,
+  dp: drop,
 };
 
 async function init() {
+
+  document.oncontextmenu = () => false;
 
   // Seed display values only once
   work.time = Date.now();
@@ -68,7 +104,7 @@ async function init() {
     rockImgs.push(image);
   }
 
-  for (let n = 0; n < 100; n++) {
+  for (let n = 0; n < 500; n++) {
 
     let x = (Math.random() - 0.5);
     let y = (Math.random() - 0.5);
@@ -102,6 +138,13 @@ async function init() {
     };
   }
 
+  for (let ctl of ['pk', 'dp']) {
+    const el = document.querySelector(`#${ctl}`);
+    el.onclick = () => {
+      commands[ctl]();
+    };
+  }
+
   work.canvas = document.querySelector('canvas');
 
   doLayout();
@@ -119,8 +162,8 @@ function doLayout() {
     canvas,
   } = work;
 
-  canvas.width = innerWidth - 350;
-  canvas.height = innerHeight;
+  canvas.width = innerWidth;
+  canvas.height = innerHeight - 350;
 }
 
 function animate() {
@@ -134,6 +177,7 @@ function animate() {
     rocks,
     time,
     ms, mz, md,
+    store,
   } = work;
 
   let {
@@ -190,57 +234,38 @@ function animate() {
 
   // Map
 
-  zx = x * z - hz;
-  zy = y * z - hz;
+  zx = x * z;
+  zy = y * z;
 
-  ctx.arc(zx + hz, zy + hz, hz * 0.97, 0, Math.PI * 2, true);
+  ctx.arc(zx, zy, hz * 0.97, 0, Math.PI * 2, true);
   ctx.clip();
-  ctx.drawImage(marsbg, zx, zy, z, z);
-
-  const proximity = {};
+  ctx.drawImage(marsbg, zx - hz, zy - hz, z, z);
 
   // Rocks
+  let closest = -1;
+  work.dist = 1;
+  work.idx = closest;
   for (let idx = 0; idx < rocks.length; idx ++) {
 
     const rock = rocks[idx];
 
+    zx = rock.x + x;
+    zy = rock.y + y;
+    const dist = zx*zx + zy*zy;
 
     hz = z / (rock.s * 100 + 150);
-    zx = (rock.x + x) * z - hz / 2;
-    zy = (rock.y + y) * z - hz / 2;
+    zx = zx * z - hz / 2;
+    zy = zy * z - hz / 2;
     ctx.drawImage(rock.img, zx, zy, hz, hz);
 
-    const dx = rock.x - x;
-    const dy = rock.y - y;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-
-    if (!proximity.dist || proximity.dist > dist) {
-      proximity.rock = rock;
-      proximity.dist = dist;
+    if (work.dist > dist) {
+      work.dist = dist;
+      closest = idx;
     }
-  }
-
-  {
-
-    const { rock } = proximity;
-
-    if (work.closestRock !== rock) {
-      console.log(proximity);
-      work.closestRock = rock;
-    }
-
-    hz = z / (rock.s * 100 + 150);
-    zx = (rock.x + x) * z;
-    zy = (rock.y + y) * z;
-    ctx.beginPath();
-    ctx.arc(zx + hz, zy + hz, hz, 0, Math.PI * 2, true);
-    ctx.lineWidth=5;
-    ctx.strokeStyle = '#0F0';
-    ctx.stroke();
   }
 
   ctx.save();
-  ctx.rotate(d*Math.PI/180);
+  ctx.rotate((d-90)*Math.PI/180);
 
   // Rover is 1/40 the scale of the map
   let rz = z / 40;
@@ -248,6 +273,31 @@ function animate() {
   ctx.drawImage(rover, -hz, -hz, rz, rz);
 
   ctx.restore();
+
+  if (closest >= 0) {
+    const rock = rocks[closest];
+    hz = Math.max(3, z / (rock.s * 100 + 150));
+    zx = (rock.x + x) * z;
+    zy = (rock.y + y) * z;
+    ctx.beginPath();
+    ctx.arc(zx, zy, hz, 0, Math.PI * 2, true);
+
+    ctx.lineWidth=2;
+
+    if (store.length >= 5) {
+      ctx.strokeStyle = '#822';
+    } else {
+      if (work.dist < 0.001) {
+        work.idx = closest;
+        ctx.strokeStyle = '#0F0';
+      } else {
+        ctx.strokeStyle = '#228';
+      }
+
+    }
+
+    ctx.stroke();
+  }
 
   let s = 0;
 
@@ -257,8 +307,8 @@ function animate() {
     s = Math.max(0.01, ms / z);
   }
 
-  x += s * Math.cos((d+90)*Math.PI/180);
-  y += s * Math.sin((d+90)*Math.PI/180);
+  x += s * Math.cos((d)*Math.PI/180);
+  y += s * Math.sin((d)*Math.PI/180);
   z *= mz;
   d += md;
 
