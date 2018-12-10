@@ -1,5 +1,14 @@
 const imgRoot = 'img';
 
+const banner = `
+_________  __________    _____
+\\_   ___ \\ \\______   \\  /     \\
+/    \\  \\/  |     ___/ /  \\ /  \\
+\\     \\____ |    |    /    Y    \\
+ \\______  / |____|    \____|__  /
+        \\/                    \\/
+Mars Rover CPM by Simon`;
+
 const work = {
   // Rover position in % of whole map, 0:0 is origin
   x: 0.0,
@@ -81,6 +90,48 @@ function drop(target) {
   }
 }
 
+function move(steps, dir) {
+
+  let {
+    ms,
+    z, d,
+    x, y,
+  } = work;
+
+  if (steps == null) {
+    steps = ms;
+  }
+
+  if (dir === 'B') {
+    steps = -steps;
+  }
+
+  let s = 0;
+  if (steps < 0) {
+    s = Math.min(-0.01, steps / z);
+  } else if (steps > 0) {
+    s = Math.max(0.01, steps / z);
+  }
+
+  if (s === 0) {
+    return;
+  }
+
+  // Translate movement into X and Y offsets
+  x += s * Math.cos(d * Math.PI / 180);
+  y += s * Math.sin(d * Math.PI / 180);
+
+  // Apply movement only if staying within safe boundaries
+  if (Math.sqrt(x*x + y*y) < 0.45) {
+    work.x = x;
+    work.y = y;
+    work.ms = 0;
+    logMessage(`Moved ${steps} in ${d}° to ${pn(x)}:${pn(y)}<br>`);
+  } else {
+    logMessage('Move request refused, rover would fall off into deep space<br>');
+  }
+}
+
 // Rover commands for buttons
 const commands = {
   lf: () => { work.md = -5; },
@@ -91,6 +142,7 @@ const commands = {
   dn: () => { work.mz = 0.9; },
   pk: () => { pickup(); },
   dp: () => { drop(); },
+  MOV: (d, s) => { move(parseInt(s, 10), d); },
 };
 
 function logMessage(content) {
@@ -118,6 +170,25 @@ function camera() {
     this.href = data;
   } catch ({ stack }) {
     logMessage(`<h3>Failed taking picture</h3><pre>${stack}</pre>`);
+  }
+}
+
+function applyCli() {
+  const { value } = document.querySelector('#cli');
+  const argv = value.toUpperCase().split(' ');
+  const cmd = argv[0];
+  argv.splice(0, 1);
+
+  if (!cmd) {
+    return;
+  }
+
+  logMessage(`Issuing command ${cmd} ${argv.join(' ')}<br>`);
+
+  try {
+    commands[cmd](...argv);
+  } catch ({ stack }) {
+    logMessage(`<h3>Failed running command</h3><pre>${stack}</pre>`);
   }
 }
 
@@ -246,6 +317,8 @@ async function init() {
 
   doLayout();
   animate();
+
+  logMessage(`<pre>${banner}</pre>`);
 }
 
 function doLayout() {
@@ -396,27 +469,18 @@ function animate() {
     ctx.stroke();
   }
 
-  let s = 0;
+  move();
 
-  if (ms < 0) {
-    s = Math.min(-0.01, ms / z);
-  } else if (ms > 0) {
-    s = Math.max(0.01, ms / z);
-  }
-
-  x += s * Math.cos((d)*Math.PI/180);
-  y += s * Math.sin((d)*Math.PI/180);
   z *= mz;
   d += md;
 
-  if (Math.sqrt(x*x + y*y) < 0.45) {
-    work.x = x;
-    work.y = y;
-  }
-
-  if (z > 100) {
+  if (z > 100 && z < 10000) {
     work.z = z;
   }
 
   work.d = d;
+
+  work.ms = 0;
+  work.md = 0;
+  work.mz = 0;
 }

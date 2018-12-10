@@ -33,7 +33,7 @@
 <body onload=init()>
   <div class=container>
     <canvas id=view></canvas>
-    <div id=pannel class=h>
+    <div id=pannel class="h dark">
       <div id=control class=v>
         <div class=h>
           <img class=button id=lf>
@@ -46,17 +46,22 @@
           <img class=button id=up>
         </div>
       </div>
-      <div id=log class=v>
-        <h1>Mars Rover by Simon</h1>
-      </div>
+      <div id=log class=v></div>
     </div>
-    <div id=storage class=v>
-      <a id=downloadLink download=rover.jpg>
+    <div id=storage class="v dark">
+      <img class=button id=pk>
+      <a id=downloadLink>
         <img class=button id=cm>
       </a>
-      <img class=button id=pk>
     </div>
-</div>
+    <div class="h dark" id=cliBar>
+      <form action="javascript:applyCli();">
+        <label>CLI</label>
+        <input id=cli></input>
+        <button id=cliSubmit>send</button>
+      </form>
+    </div>
+  </div>
 </body>
 
 </html>
