@@ -83,6 +83,14 @@ body {
   border-bottom-right-radius: 20px;
   position: absolute;
   padding: 10px;
+  justify-content: space-between;
+  align-items: stretch;
+  align-content: stretch;
+}
+
+#cliBar > * {
+  display: block;
+  margin: 5px;
 }
 
 .v {

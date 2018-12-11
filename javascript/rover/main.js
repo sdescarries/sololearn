@@ -32,6 +32,20 @@ const work = {
   idx: -1,
 };
 
+// Controls
+const ctlImgs = {
+  lf: `${imgRoot}/left.png`,
+  rt: `${imgRoot}/right.png`,
+  fw: `${imgRoot}/up.png`,
+  bk: `${imgRoot}/down.png`,
+  up: `${imgRoot}/zoomin.png`,
+  dn: `${imgRoot}/zoomout.png`,
+  pk: `${imgRoot}/grab.png`,
+  dp: `${imgRoot}/drop.png`,
+  cm: `${imgRoot}/camera.png`,
+  lb: `${imgRoot}/lab.png`,
+};
+
 // prettify number
 function pn(num) {
   const str = (num * 1000).toString(10);
@@ -45,20 +59,58 @@ function pickup() {
     idx,
   } = work;
 
-  if (idx >= 0 && store.length < 5) {
+  if (store.length >= 5) {
+    logMessage('Rock storage is full<br>');
+  } else if (idx === -1) {
+    logMessage('Rock is too far to be picked<br>');
+  } else {
 
     const rock = rocks[idx];
     const ui = document.querySelector('#storage');
 
     if (ui) {
-      const img = rock.img.cloneNode(true);
-      img.className = 'button';
-      img.rock = rock;
-      img.onclick = function () {
-        ui.removeChild(this);
-        drop(this.rock);
+      const rockImg = rock.img.cloneNode(true);
+      const dropImg = new Image();
+      const labImg = new Image();
+
+      dropImg.src = ctlImgs.dp;
+      labImg.src = ctlImgs.lb;
+
+      rockImg.className = 'button';
+      dropImg.className = 'button';
+      labImg.className = 'button';
+
+      dropImg.style.display = 'none';
+      labImg.style.display = 'none';
+
+      rockImg.onclick = function () {
+
+        if (dropImg.style.display === 'none') {
+          dropImg.style.display = 'block';
+          labImg.style.display = 'block';
+        } else {
+          dropImg.style.display = 'none';
+          labImg.style.display = 'none';
+        }
       };
-      ui.appendChild(img);
+
+      rock.drop = function () {
+        ui.removeChild(rockImg);
+        ui.removeChild(dropImg);
+        ui.removeChild(labImg);
+      };
+
+      dropImg.onclick = function () {
+        drop(rock);
+      };
+
+      labImg.onclick = function () {
+        analyse(rock);
+      };
+
+      ui.appendChild(rockImg);
+      ui.appendChild(dropImg);
+      ui.appendChild(labImg);
     }
 
     store.push(rock);
@@ -75,9 +127,15 @@ function drop(target) {
     x, y,
   } = work;
 
-  const idx = store.indexOf(target);
+  let idx = -1;
 
-  if (idx > -1) {
+  if (target != null) {
+    idx = store.indexOf(target);
+  } else {
+    idx = 0;
+  }
+
+  if (idx > -1 && store.length > 0) {
     const rock = store[idx];
     store.splice(idx, 1);
     rock.x = -x;
@@ -85,8 +143,42 @@ function drop(target) {
     const { s } = rock;
     logMessage(`Dropped a rock of size ${pn(s)} at ${pn(-x)}:${pn(-y)}<br>`);
     rocks.push(rock);
+    rock.drop();
   } else {
     logMessage('Nothing to drop');
+  }
+}
+
+function analyse(target) {
+  const { store } = work;
+  let idx = -1;
+
+  if (target != null) {
+    idx = store.indexOf(target);
+  } else {
+    idx = 0;
+  }
+
+  if (idx > -1 && store.length > 0) {
+    const rock = store[idx];
+    store.splice(idx, 1);
+    rock.drop();
+    const { s } = rock;
+    logMessage(`Analyzing a rock of size ${pn(s)}, please stand by for results...<br>`);
+
+    setTimeout(() => {
+
+      logMessage('<h2>Rock Analysis Results</h2>');
+      logMessage(`<img src=${rock.img.src} width=60px>`);
+
+      for (let el of [ 'Na2O', 'MgO', 'Al2O3', 'SiO2', 'SO3', 'CaO', 'FeO', 'Ni', 'Zn' ]) {
+        logMessage(`${el}: ${Math.random()}<br>`);
+      }
+
+    }, 5000);
+
+  } else {
+    logMessage('Nothing to analyze');
   }
 }
 
@@ -132,6 +224,20 @@ function move(steps, dir) {
   }
 }
 
+function turn(angle, dir) {
+
+  if (angle === 0) {
+    return;
+  }
+
+  if (dir === 'L') {
+    angle = -angle;
+  }
+
+  work.d += angle;
+  logMessage(`Turned ${angle}° to ${work.d}°<br>`);
+}
+
 // Rover commands for buttons
 const commands = {
   lf: () => { work.md = -5; },
@@ -143,6 +249,12 @@ const commands = {
   pk: () => { pickup(); },
   dp: () => { drop(); },
   MOV: (d, s) => { move(parseInt(s, 10), d); },
+  TRN: (d) => { turn(15, d); },
+  RCK: () => { pickup(); },
+  RLS: () => { drop(); },
+  ANL: () => { analyse(); },
+  PIC: () => { logMessage('Oh snap!'); },
+  LOG: () => { logMessage('Look ma, logging!'); },
 };
 
 function logMessage(content) {
@@ -258,20 +370,6 @@ async function init() {
 
     work.rocks.push(rock);
   }
-
-  // Controls
-  const ctlImgs = {
-    lf: `${imgRoot}/left.png`,
-    rt: `${imgRoot}/right.png`,
-    fw: `${imgRoot}/up.png`,
-    bk: `${imgRoot}/down.png`,
-    up: `${imgRoot}/zoomin.png`,
-    dn: `${imgRoot}/zoomout.png`,
-    pk: `${imgRoot}/grab.png`,
-    dp: `${imgRoot}/drop.png`,
-    cm: `${imgRoot}/camera.png`,
-    lb: `${imgRoot}/lab.png`,
-  };
 
   for (let ctl of ['lf', 'rt', 'fw', 'bk', 'up', 'dn']) {
     const el = document.querySelector(`#${ctl}`);
@@ -470,15 +568,13 @@ function animate() {
   }
 
   move();
+  turn(md);
 
   z *= mz;
-  d += md;
 
   if (z > 100 && z < 10000) {
     work.z = z;
   }
-
-  work.d = d;
 
   work.ms = 0;
   work.md = 0;
