@@ -1,4 +1,26 @@
-const imgRoot = 'img';
+const imgRoot = 'https://sdescarries.github.io/sololearn/javascript/rover/img';
+
+const imgDb = {
+  // marstotal: 'https://i.postimg.cc/zf4Gg4Gv/marstotal.jpg',
+  // rover: 'https://i.postimg.cc/yN3VsnyH/rover.png',
+  // space: 'https://i.postimg.cc/tT09TPBV/space.jpg',
+
+  marstotal: `${imgRoot}/marstotal.jpg`,
+  rover: `${imgRoot}/rover.png`,
+  space: `${imgRoot}/space.jpg`,
+};
+
+const rockImgDb = [
+  // 'https://i.postimg.cc/brhY6bbj/r1.png',
+  // 'https://i.postimg.cc/prJW3TY5/r2.png',
+  // 'https://i.postimg.cc/446xYLk4/r3.png',
+  // 'https://i.postimg.cc/kgpn0L8s/r4.png',
+
+  `${imgRoot}/r1.png`,
+  `${imgRoot}/r2.png`,
+  `${imgRoot}/r3.png`,
+  `${imgRoot}/r4.png`,
+];
 
 const banner = `
 _________  __________    _____
@@ -217,7 +239,6 @@ function move(steps, dir) {
   if (Math.sqrt(x*x + y*y) < 0.45) {
     work.x = x;
     work.y = y;
-    work.ms = 0;
     logMessage(`Moved ${steps} in ${d}° to ${pn(x)}:${pn(y)}<br>`);
   } else {
     logMessage('Move request refused, rover would fall off into deep space<br>');
@@ -306,7 +327,7 @@ function applyCli() {
 
 async function init() {
 
-  //document.oncontextmenu = () => false;
+  document.oncontextmenu = () => false;
 
   // Seed display values only once
   work.time = Date.now();
@@ -317,35 +338,30 @@ async function init() {
   {
     // Space background
     const image = work.space = new Image();
-    image.origin = 'anonymous';
-    image.src = `${imgRoot}/space.jpg`;
+    image.crossOrigin = 'anonymous';
+    image.src = imgDb.space;
   }
 
   {
     // An actual satelite image of Mars
     const image = work.marsbg = new Image();
-    image.origin = 'anonymous';
-    image.src = `${imgRoot}/marstotal.jpg`;
+    image.crossOrigin = 'anonymous';
+    image.src = imgDb.marstotal;
   }
 
   {
     // The rover representation
     const image = work.rover = new Image();
-    image.origin = 'anonymous';
-    image.src = `${imgRoot}/rover.png`;
+    image.crossOrigin = 'anonymous';
+    image.src = imgDb.rover;
   }
 
   const rockImgs = [];
 
   // Rock images
-  for (let src of [
-    `${imgRoot}/r1.png`,
-    `${imgRoot}/r2.png`,
-    `${imgRoot}/r3.png`,
-    `${imgRoot}/r4.png`,
-  ]) {
+  for (let src of rockImgDb) {
     const image = new Image();
-    image.origin = 'anonymous';
+    image.crossOrigin = 'anonymous';
     image.src = src;
     rockImgs.push(image);
   }
@@ -576,7 +592,9 @@ function animate() {
     work.z = z;
   }
 
+  /*
   work.ms = 0;
   work.md = 0;
   work.mz = 0;
+  */
 }
