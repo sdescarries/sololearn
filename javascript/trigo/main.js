@@ -1,6 +1,5 @@
 const work = {
   params: {
-    angle: 0,
     radius: 0.4,
     dim: 0,
   },
@@ -8,12 +7,16 @@ const work = {
     moving: false,
     x: 0.25,
     y: 0.25,
+  },
+  focus: {
+    angle: 0.0,
+    rate: 0.0,
+    dist: 0.0,
   }
 };
 
 function moveTarget({ offsetX, offsetY }, flag) {
   const { canvas, target, params } = work;
-  const { dim } = params;
 
   if (flag != null) {
     target.moving = flag;
@@ -30,6 +33,8 @@ function moveTarget({ offsetX, offsetY }, flag) {
     target.y = (offsetY / height) - 0.5;
     target.offsetX = offsetX;
     target.offsetY = offsetY;
+
+    work.rate = 0.0;
   }
 }
 
@@ -77,6 +82,7 @@ function animate() {
     time,
     params,
     target,
+    focus,
   } = work;
 
   if (animId) {
@@ -103,12 +109,11 @@ function animate() {
 
   const {
     dim,
-    angle,
     radius,
   } = params;
 
   ctx.fillStyle = '#222';
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 2;
   ctx.fillRect(0, 0, width, height);
   ctx.translate(width/2, height/2);
   ctx.font = '20px Sans';
@@ -124,18 +129,19 @@ function animate() {
     ctx.moveTo(0, -r);
     ctx.lineTo(0, r);
     ctx.strokeStyle = '#822';
-    ctx.stroke();
-
     ctx.fillStyle = '#DDF';
+    ctx.stroke();
+    /*
     ctx.fillText('0°', r + 30, 8);
     ctx.fillText('90°', 0, r + 25);
     ctx.fillText('-90°', 0, -r - 10);
     ctx.fillText('180°', -r - 30, 8);
+
+    */
   }
 
   {
     let { x, y } = target;
-    let r = radius / 50;
 
     const {
       width,
@@ -144,46 +150,74 @@ function animate() {
 
     x *= width;
     y *= height;
-    r *= dim;
 
-    let hypotenuse = Math.sqrt(x*x + y*y);
     let cw = (y < 0);
     let hc = cw ? -1 : 1;
+    let hypotenuse = Math.sqrt(x*x + y*y);
     let rad = Math.acos(x / hypotenuse) * hc;
+
+    const {
+      angle,
+    } = focus;
+
+    let deg = (rad / Math.PI * 180);
+    let frad = angle / 180 * Math.PI;
+    let drad = frad - rad;
+
+    if (drad > Math.PI) {
+      drad -= Math.PI * 2;
+    } else if (drad < -Math.PI) {
+      drad += Math.PI * 2;
+    }
+
+    let dist = Math.abs(drad / Math.PI* 180);
+
+    cw = (drad > 0);
+    hc = cw ? -1 : 1;
+
+    if (target.moving) {
+      if (dist > 1) {
+        focus.angle += hc / 2;
+      } else {
+        focus.angle = deg;
+      }
+    }
 
     ctx.beginPath();
     ctx.moveTo(0, 0);
 
-    // Line to angle 0
-    ctx.lineTo(hypotenuse, 0);
-    ctx.arc(0, 0, hypotenuse, 0, rad, cw);
+    // Line to focus
+    x = Math.cos(frad) * hypotenuse;
+    y = Math.sin(frad) * hypotenuse;
+    ctx.lineTo(x, y);
+
+    // Arc to target
+    ctx.arc(0, 0, hypotenuse, frad, rad, cw);
+
+    // Back at origin
     ctx.lineTo(0, 0);
+
     ctx.strokeStyle = '#2F2';
     ctx.stroke();
 
-    /*
+    // Add labels for degree values
+    hypotenuse += 25;
 
-    if (Math.abs(x) > Math.abs(y)) {
+    x = Math.cos(rad) * (hypotenuse);
+    y = Math.sin(rad) * (hypotenuse);
+    ctx.fillText(`${parseInt(deg, 10)}°`, x, y);
 
-      // opposite
-      ctx.lineTo(x, 0);
-
-      // adjacent
-      ctx.lineTo(0, 0);
-
-    } else {
-
-      // opposite
-      ctx.lineTo(0, y);
-
-      // adjacent
-      ctx.lineTo(0, 0);
+    if (dist > 10) {
+      x = Math.cos(frad) * (hypotenuse);
+      y = Math.sin(frad) * (hypotenuse);
+      ctx.fillText(`${parseInt(angle, 10)}°`, x, y);
     }
-    ctx.fillText(Math.round(hypotenuse), x, y);
-    ctx.fillText(Math.round(x), x/2, 0);
-    ctx.fillText(Math.round(y), 0, y/2);
-    */
+
+    if (dist > 45) {
+      x = Math.cos(rad + drad / 2) * (hypotenuse);
+      y = Math.sin(rad + drad / 2) * (hypotenuse);
+      ctx.fillText(`${parseInt(dist, 10)}°`, x, y);
+    }
 
   }
-
 }
