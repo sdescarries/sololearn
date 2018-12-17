@@ -1,21 +1,12 @@
 const imgRoot = 'https://sdescarries.github.io/sololearn/javascript/rover/img';
 
 const imgDb = {
-  // marstotal: 'https://i.postimg.cc/zf4Gg4Gv/marstotal.jpg',
-  // rover: 'https://i.postimg.cc/yN3VsnyH/rover.png',
-  // space: 'https://i.postimg.cc/tT09TPBV/space.jpg',
-
   marstotal: `${imgRoot}/marstotal.jpg`,
   rover: `${imgRoot}/rover.png`,
   space: `${imgRoot}/space.jpg`,
 };
 
 const rockImgDb = [
-  // 'https://i.postimg.cc/brhY6bbj/r1.png',
-  // 'https://i.postimg.cc/prJW3TY5/r2.png',
-  // 'https://i.postimg.cc/446xYLk4/r3.png',
-  // 'https://i.postimg.cc/kgpn0L8s/r4.png',
-
   `${imgRoot}/r1.png`,
   `${imgRoot}/r2.png`,
   `${imgRoot}/r3.png`,
@@ -33,25 +24,30 @@ Mars Rover CPM by Simon`;
 
 const work = {
   // Rover position in % of whole map, 0:0 is origin
-  x: 0.0,
-  y: 0.0,
+  roverPosX: 0,
+  roverPosY: 0,
 
   // Viewing altitude or full map scale
-  z: 600,
+  zoomLevel: 600,
 
-  // Rover direction in degree
-  d: 0.0,
+  // Rover direction in radian
+  roverRadian: 0.0,
 
   // Moving speeds
   ms: 0.0,
   mz: 0.0,
   md: 0.0,
 
+  // Pending destination
+  to: null,
+
   // Database of rocks found on surface
   rocks: [],
   store: [],
+  closest: -1,
   dist: 1,
   idx: -1,
+  auto: true,
 };
 
 // Controls
@@ -66,12 +62,88 @@ const ctlImgs = {
   dp: `${imgRoot}/drop.png`,
   cm: `${imgRoot}/camera.png`,
   lb: `${imgRoot}/lab.png`,
+  au: `${imgRoot}/rover.png`,
 };
 
 // prettify number
 function pn(num) {
-  const str = (num * 1000).toString(10);
-  return str.split('.')[0];
+  return parseInt(num * 1000, 10).toString(10);
+}
+
+const oneDegRad = Math.PI / 180;
+
+/*
+
+   Canvas coordinates
+
+        -y
+         │
+         │0
+   -x ───┼──── +x
+         │
+         │
+        +y
+
+   Vector representation
+
+      a
+   ϴ ───┐
+     ╲  │
+    h ╲ │o
+       ╲│
+       x:y
+
+   ϴ = arctan(o) if a == 1;
+   ϴ = arcsin(o) if h == 1;
+   ϴ = arccos(a) if h == 1;
+
+*/
+
+function pythagorean(x, y) {
+  return Math.sqrt(x*x + y*y);
+}
+
+function vectorToRadian(x, y) {
+
+  const hypotenuse = pythagorean(x, y);
+  const adjacent = x / hypotenuse;
+  const radian = Math.acos(adjacent);
+
+  if (radian !== radian) {
+    return 0;
+  }
+
+  if (y < 0) {
+    return radian * -1;
+  }
+
+  return radian;
+}
+
+function radianToDegree(radian) {
+  const degree = radian / Math.PI * 180;
+  return parseInt(Math.round(degree), 10);
+}
+
+function delta(src, dst, range) {
+  let dist = dst - src;
+  let mul = Math.abs(Math.floor(dist / range));
+
+  if (dist > range) {
+    dist -= range * (mul + 1);
+  } else if (dist < -range) {
+    dist += range * mul;
+  }
+
+  return dist;
+}
+
+function radianDelta(src, dst) {
+  return delta(src, dst, Math.PI);
+}
+
+function degreeDelta(src, dst) {
+  return delta(src, dst, 180);
 }
 
 function pickup() {
@@ -146,7 +218,8 @@ function drop(target) {
   const {
     store,
     rocks,
-    x, y,
+    roverPosX,
+    roverPosY,
   } = work;
 
   let idx = -1;
@@ -160,14 +233,14 @@ function drop(target) {
   if (idx > -1 && store.length > 0) {
     const rock = store[idx];
     store.splice(idx, 1);
-    rock.x = -x;
-    rock.y = -y;
+    rock.x = roverPosX;
+    rock.y = roverPosY;
     const { s } = rock;
-    logMessage(`Dropped a rock of size ${pn(s)} at ${pn(-x)}:${pn(-y)}<br>`);
+    logMessage(`Dropped a rock of size ${pn(s)} at ${pn(roverPosX)}:${pn(roverPosY)}<br>`);
     rocks.push(rock);
     rock.drop();
   } else {
-    logMessage('Nothing to drop');
+    logMessage('Nothing to drop<br>');
   }
 }
 
@@ -200,7 +273,7 @@ function analyse(target) {
     }, 5000);
 
   } else {
-    logMessage('Nothing to analyze');
+    logMessage('Nothing to analyze<br>');
   }
 }
 
@@ -208,8 +281,9 @@ function move(steps, dir) {
 
   let {
     ms,
-    z, d,
-    x, y,
+    zoomLevel,
+    roverRadian,
+    roverPosX, roverPosY,
   } = work;
 
   if (steps == null) {
@@ -220,28 +294,31 @@ function move(steps, dir) {
     steps = -steps;
   }
 
-  let s = 0;
+  let scaledSteps = 0;
   if (steps < 0) {
-    s = Math.min(-0.01, steps / z);
+    scaledSteps = Math.min(-0.01, steps / zoomLevel);
   } else if (steps > 0) {
-    s = Math.max(0.01, steps / z);
+    scaledSteps = Math.max(0.01, steps / zoomLevel);
   }
 
-  if (s === 0) {
-    return;
+  if (scaledSteps === 0) {
+    return true;
   }
 
   // Translate movement into X and Y offsets
-  x += s * Math.cos(d * Math.PI / 180);
-  y += s * Math.sin(d * Math.PI / 180);
+  roverPosX -= scaledSteps * Math.cos(roverRadian);
+  roverPosY -= scaledSteps * Math.sin(roverRadian);
 
   // Apply movement only if staying within safe boundaries
-  if (Math.sqrt(x*x + y*y) < 0.45) {
-    work.x = x;
-    work.y = y;
-    logMessage(`Moved ${steps} in ${d}° to ${pn(x)}:${pn(y)}<br>`);
+  if (pythagorean(roverPosX, roverPosY) < 0.45) {
+    work.roverPosX = roverPosX;
+    work.roverPosY = roverPosY;
+    // logMessage(`Moved ${steps} in ${radianToDegree(roverRadian)}° to ${pn(roverPosX)}:${pn(roverPosY)}<br>`);
+    return true;
   } else {
     logMessage('Move request refused, rover would fall off into deep space<br>');
+    commands.stop();
+    return false;
   }
 }
 
@@ -255,27 +332,61 @@ function turn(angle, dir) {
     angle = -angle;
   }
 
-  work.d += angle;
-  logMessage(`Turned ${angle}° to ${work.d}°<br>`);
+  let { roverRadian } = work;
+
+  roverRadian = radianDelta(0, roverRadian + angle);
+
+  // logMessage(`Turned ${radianToDegree(angle)}° to ${radianToDegree(roverRadian)}°<br>`);
+  work.roverRadian = roverRadian;
+}
+
+function seek(target) {
+  const { rocks, closest } = work;
+  if (closest > -1) {
+    const { x, y } = rocks[target || closest];
+    work.to = { x, y, closest, z: 5000 };
+    logMessage(`Seeking rock at ${pn(x)}:${pn(y)}<br>`);
+  } else {
+    logMessage('No more rock to seek to<br>');
+    work.to = null;
+    work.auto = false;
+  }
 }
 
 // Rover commands for buttons
 const commands = {
-  lf: () => { work.md = -5; },
-  rt: () => { work.md = +5; },
+  lf: () => { work.md = -(5 * oneDegRad); },
+  rt: () => { work.md = +(5 * oneDegRad); },
   fw: () => { work.ms = +1; },
   bk: () => { work.ms = -1; },
   up: () => { work.mz = 1.1; },
   dn: () => { work.mz = 0.9; },
   pk: () => { pickup(); },
   dp: () => { drop(); },
+  au: () => {
+    const { auto } = work;
+
+    if (auto) {
+      commands.stop();
+    }
+
+    work.auto = !auto;
+    logMessage(`${auto ? 'disabling' : 'enabling' } auto pilot mode`);
+  },
   MOV: (d, s) => { move(parseInt(s, 10), d); },
-  TRN: (d) => { turn(15, d); },
+  TRN: (d, a = 15) => { turn(a * oneDegRad, d); },
   RCK: () => { pickup(); },
   RLS: () => { drop(); },
   ANL: () => { analyse(); },
-  PIC: () => { logMessage('Oh snap!'); },
-  LOG: () => { logMessage('Look ma, logging!'); },
+  PIC: () => { logMessage('Oh snap!<br>'); },
+  LOG: () => { logMessage('Look ma, logging!<br>'); },
+  SEEK: () => seek(),
+  stop: () => {
+    work.md = 0;
+    work.ms = 0;
+    work.mz = 0;
+    work.to = null;
+  }
 };
 
 function logMessage(content) {
@@ -366,19 +477,22 @@ async function init() {
     rockImgs.push(image);
   }
 
+  // Rocks positions
   for (let n = 0; n < 500; n++) {
 
     let x = (Math.random() - 0.5);
     let y = (Math.random() - 0.5);
 
     let fx = 0.98;
-    let fy = Math.sqrt(0.25 - x*x) * 2 * fx;
+    let fy = pythagorean(0.5, x) * 2 * fx;
 
     x *= fx;
     y *= fy;
 
     const rock = {
       x, y,
+      //x: -0.25,
+      //y: -0.25,
       s: Math.random(),
       a: Math.random() * 360,
       img: rockImgs[Math.floor(Math.random() * rockImgs.length)],
@@ -387,7 +501,8 @@ async function init() {
     work.rocks.push(rock);
   }
 
-  for (let ctl of ['lf', 'rt', 'fw', 'bk', 'up', 'dn']) {
+  // Buttons that activate until they're released
+  for (const ctl of ['lf', 'rt', 'fw', 'bk', 'up', 'dn']) {
     const el = document.querySelector(`#${ctl}`);
 
     if (!el) {
@@ -395,18 +510,17 @@ async function init() {
     }
 
     el.src = ctlImgs[ctl];
-    el.onpointerdown = () => {
-      commands[ctl]();
-    };
+    const com = commands[ctl];
 
-    el.onpointerup = () => {
-      work.ms = 0.0;
-      work.mz = 0.0;
-      work.md = 0.0;
-    };
+    el.addEventListener('pointerdown',  com,  false);
+    el.addEventListener('pointerup',    commands.stop, false);
+    el.addEventListener('pointerleave', commands.stop, false);
+    el.addEventListener('pointermove', () => false, false);
+    el.addEventListener('dragstart', () => false, false);
   }
 
-  for (let ctl of ['pk', 'dp', 'cm']) {
+  // Buttons that are shot once
+  for (const ctl of ['pk', 'dp', 'cm', 'au']) {
     const el = document.querySelector(`#${ctl}`);
 
     if (!el) {
@@ -418,9 +532,11 @@ async function init() {
     const com = commands[ctl];
 
     if (com) {
-      el.onclick = () => {
-        commands[ctl]();
-      };
+      el.addEventListener('pointerdown',  com,  false);
+      el.addEventListener('pointerup',    () => false, false);
+      el.addEventListener('pointerleave', () => false, false);
+      el.addEventListener('pointermove', () => false, false);
+      el.addEventListener('dragstart', () => false, false);
     }
   }
 
@@ -460,12 +576,15 @@ function animate() {
     rover,
     rocks,
     time,
-    ms, mz, md,
     store,
   } = work;
 
   let {
-    x, y, z, d,
+    roverPosX,
+    roverPosY,
+    roverRadian,
+    zoomLevel,
+    mz, md,
   } = work;
 
   if (animId) {
@@ -513,56 +632,58 @@ function animate() {
   // move to the center of the canvas
   ctx.translate(width/2, height/2);
 
-  let hz = z / 2;
+  let hz = zoomLevel / 2;
   let zx, zy;
 
   // Map
 
-  zx = x * z;
-  zy = y * z;
+  zx = -roverPosX * zoomLevel;
+  zy = -roverPosY * zoomLevel;
 
+  // Clip a perfect circular region
   ctx.arc(zx, zy, hz * 0.97, 0, Math.PI * 2, true);
   ctx.clip();
-  ctx.drawImage(marsbg, zx - hz, zy - hz, z, z);
+  ctx.drawImage(marsbg, zx - hz, zy - hz, zoomLevel, zoomLevel);
 
   // Rocks
-  let closest = -1;
+  work.closest = -1;
+  work.idx = -1;
   work.dist = 1;
-  work.idx = closest;
+
   for (let idx = 0; idx < rocks.length; idx ++) {
 
     const rock = rocks[idx];
 
-    zx = rock.x + x;
-    zy = rock.y + y;
+    zx = rock.x - roverPosX;
+    zy = rock.y - roverPosY;
     const dist = zx*zx + zy*zy;
 
-    hz = z / (rock.s * 100 + 150);
-    zx = zx * z - hz / 2;
-    zy = zy * z - hz / 2;
+    hz = zoomLevel / (rock.s * 100 + 150);
+    zx = zx * zoomLevel - hz / 2;
+    zy = zy * zoomLevel - hz / 2;
     ctx.drawImage(rock.img, zx, zy, hz, hz);
 
     if (work.dist > dist) {
       work.dist = dist;
-      closest = idx;
+      work.closest = idx;
     }
   }
 
   // Rover is 1/40 the scale of the map
   ctx.save();
-  ctx.rotate((d)*Math.PI/180);
-  let rz = z / 40;
+  ctx.rotate(roverRadian);
+  let rz = zoomLevel / 40;
   hz = rz / 2;
   ctx.drawImage(rover, -hz, -hz, rz, rz);
   ctx.restore();
 
-
   // Manage the closest rock
-  if (closest >= 0) {
+  const { closest } = work;
+  if (closest > -1) {
     const rock = rocks[closest];
-    hz = Math.max(6, z / (rock.s * 100 + 150));
-    zx = (rock.x + x) * z;
-    zy = (rock.y + y) * z;
+    hz = Math.max(6, zoomLevel / (rock.s * 100 + 150));
+    zx = (rock.x - roverPosX) * zoomLevel;
+    zy = (rock.y - roverPosY) * zoomLevel;
     ctx.beginPath();
     ctx.arc(zx, zy, hz, 0, Math.PI * 2, true);
 
@@ -572,24 +693,72 @@ function animate() {
       ctx.strokeStyle = '#F22';
     } else {
       if (work.dist < 0.001) {
-        work.idx = closest;
+        work.idx = work.closest;
         ctx.strokeStyle = '#0F0';
       } else {
         ctx.strokeStyle = '#22F';
       }
-
     }
 
     ctx.stroke();
   }
 
-  move();
+  const { to } = work;
+
+  if (to) {
+
+    zx = roverPosX - to.x;
+    zy = roverPosY - to.y;
+    to.hyp = pythagorean(zx, zy);
+
+    // Get angular distance
+    to.rad = vectorToRadian(zx, zy);
+    to.del = radianDelta(roverRadian, to.rad);
+
+    const absDel = Math.abs(to.del);
+
+    if (absDel > oneDegRad) {
+      md = (to.del < 0 ? -1 : 1);
+      md *= Math.min(absDel, oneDegRad * 5);
+      work.ms = 0;
+    } else {
+      work.ms = (1 / zoomLevel);
+      md = 0;
+    }
+
+    if (work.idx === to.closest) {
+      logMessage('Reached closest rock');
+      commands.stop();
+      pickup();
+
+      if (store.length >= 5) {
+        while (store.length) {
+          analyse();
+        }
+      }
+      md = 0;
+    }
+
+    if (zoomLevel < to.z) {
+      mz = 1.01;
+    }
+  } else if (work.auto) {
+    seek(closest);
+  }
+
   turn(md);
+  if (!move() && to) {
+    logMessage('Rock appears to be unreachable, annihilate with BFG...</br>');
+    rocks.splice(to.closest, 1);
+    commands.stop();
+  }
 
-  z *= mz;
+  zoomLevel *= mz;
 
-  if (z > 100 && z < 10000) {
-    work.z = z;
+  if (zoomLevel > 100 && zoomLevel < 20000) {
+    work.zoomLevel = zoomLevel;
+  } else {
+    work.mz = 0;
   }
 
   /*

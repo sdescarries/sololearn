@@ -31,7 +31,7 @@ function pythagorean(x, y) {
   return Math.sqrt(x*x + y*y);
 }
 
-function vectoradian(x, y) {
+function vectorToRadian(x, y) {
 
   const hypotenuse = pythagorean(x, y);
   const adjacent = x / hypotenuse;
@@ -48,12 +48,13 @@ function vectoradian(x, y) {
   return radian;
 }
 
-function radiantodegree(radian) {
-  return radian / Math.PI * 180;
+function radianToDegree(radian) {
+  const degree = radian / Math.PI * 180;
+  return parseInt(Math.round(degree), 10);
 }
 
 function expectInt(value) {
-  return expect(parseInt(Math.round(radiantodegree(value)), 10));
+  return expect(radianToDegree(value));
 }
 
 function radistance(a, b) {
@@ -80,7 +81,7 @@ describe('vector to angle', () => {
   ]) {
 
     it(`should convert ${x}:${y} to ${d}°`, () => {
-      expectInt(vectoradian(x, y)).toEqual(d);
+      expectInt(vectorToRadian(x, y)).toEqual(d);
     });
   }
 });
